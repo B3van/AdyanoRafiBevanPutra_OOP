@@ -2,7 +2,7 @@ package com.nama.frontend;
 
 public class Enemy {
     String name;
-    int hp, maxHP
+    int hp, maxHP;
 
     public Enemy(String name, int hp) {
         this.name = name;
@@ -12,20 +12,21 @@ public class Enemy {
 
     public void takeDamage(int damage) {
         hp -= damage;
-        if (hp < 0) hp = 0;
 
+        if (hp < 0) {
+            hp = 0;
+        }
 
-        System.out.println(name + " took " + damage + " damage! HP: " + hp + "/" + maxHp);
+        System.out.println(name + " took " + damage + " damage! HP: " + hp + "/" + maxHP);
 
-        if (hp == 0)
-            System.out.println(name + " was defeated! ");
-
+        if (hp == 0) {
+            System.out.println(name + " was defeated!");
+        }
     }
 
-    public void attack(com.nama.frontend.Player, int damage) {
-        System.out.println(name + "unleashes bullet barrage on " + player.name + "!");
-        player.takeDamage(damage);
-
+    public void attack(Player target, int damage) {
+        System.out.println(name + " attacks " + target.name + " dealing " + damage + " DMG!");
+        target.takeDamage(damage);
     }
 
     public boolean isAlive() {
