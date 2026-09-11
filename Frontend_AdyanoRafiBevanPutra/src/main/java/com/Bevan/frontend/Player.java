@@ -4,11 +4,10 @@ import com.badlogic.gdx.graphics.Color;
 
 public class Player extends GameObject {
 
-    private String name;
-    private int hp;
-    private int power;
-    private int spellCards;
-    private long score;
+    public String name;
+    public int hp;
+    public int power;
+    public int spellCards;
 
     public Player(String name, int hp, int power, int spellCards) {
         super(280, 40, 32, 32, 0, Color.RED);

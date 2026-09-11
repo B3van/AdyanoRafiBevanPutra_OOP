@@ -26,4 +26,4 @@ public class Test {
 
         System.out.println("\n=== Battle Simulation Complete ===");
     }
-}1
+}

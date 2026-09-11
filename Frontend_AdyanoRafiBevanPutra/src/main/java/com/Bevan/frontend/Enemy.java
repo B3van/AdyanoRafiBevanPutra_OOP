@@ -4,9 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 
 public class Enemy extends GameObject {
 
-    private String name;
-    private int hp;
-    private int maxHp;
+    public String name;
+    public int hp;
 
     protected long scoreValue;
 
