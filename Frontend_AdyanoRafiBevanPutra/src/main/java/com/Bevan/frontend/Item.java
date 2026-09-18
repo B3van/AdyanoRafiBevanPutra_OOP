@@ -16,6 +16,7 @@ public class Item extends GameObject {
 
     public Item(float x, float y, float width, float height,
                 float speed, String itemType) {
+
         super(x, y, width, height, speed, Color.WHITE);
 
         this.itemType = itemType;
@@ -24,6 +25,7 @@ public class Item extends GameObject {
 
     public Item(float x, float y, float width, float height,
                 float speed, String itemType, long scoreValue) {
+
         super(x, y, width, height, speed, Color.WHITE);
 
         this.itemType = itemType;
@@ -31,8 +33,8 @@ public class Item extends GameObject {
     }
 
     @Override
-    public void update(float delta) {
-        y -= speed * delta;
+    public void update (float delta) {
+        this.y -= speed * delta;
     }
 
     public String getItemType() {

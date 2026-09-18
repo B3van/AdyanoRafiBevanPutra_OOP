@@ -1,9 +1,10 @@
-package com.Bevan.frontend;
+package com.Bevan.frontend.objects;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 
-public abstract class GameObject {
+public abstract class GameObject implements Collidable {
 
     protected float x;
     protected float y;
@@ -30,6 +31,26 @@ public abstract class GameObject {
     public void render(ShapeRenderer shapeRenderer) {
         shapeRenderer.setColor(color);
         shapeRenderer.rect(x, y, width, height);
+    }
+
+    @Override
+    public Rectangle getCoreHitbox() {
+        return new Rectangle(x, y, width, height);
+    }
+
+    @Override
+    public Rectangle getGrazeHitbox() {
+        return new Rectangle(
+            x - 10,
+            y - 10,
+            width + 20,
+            height + 20
+        );
+    }
+
+    @Override
+    public void onCollision(Collidable other) {
+        // Base collision handler
     }
 
     public float getX() {

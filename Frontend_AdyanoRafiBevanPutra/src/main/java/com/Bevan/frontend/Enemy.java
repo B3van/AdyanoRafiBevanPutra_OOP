@@ -4,10 +4,10 @@ import com.badlogic.gdx.graphics.Color;
 
 public class Enemy extends GameObject {
 
-    public String name;
-    public int hp;
-
-    protected long scoreValue;
+    private String name;
+    private int hp;
+    private int maxHp;
+    private long scoreValue;
 
     public Enemy(String name, int hp) {
         super(200, 380, 24, 24, 0, Color.PINK);
@@ -35,14 +35,19 @@ public class Enemy extends GameObject {
             return false;
         }
 
-        hp -= damage;
+        setHp(getHp() - damage);
 
-        if (hp < 0) {
-            hp = 0;
+        System.out.printLn(
+            getName() + " took " + damage
+            + "damage! HP: "
+            + getHp() + "/" + getMaxHP()
+        )
+
+
         }
 
         System.out.println(name + " took " + damage
-                + " damage! HP: " + hp + "/" + maxHp);
+            + " damage! HP: " + hp + "/" + maxHp);
 
         if (hp == 0) {
             System.out.println(name + " was defeated!");
@@ -53,8 +58,11 @@ public class Enemy extends GameObject {
     }
 
     public void attack(Player player, int damage) {
-        System.out.println(name + " unleashes bullet barrage on "
-                + player.getName() + "!");
+
+        System.out.println(
+            getName() + + " unleashes bullet barrage on "
+                + player.name + "!"
+        );
 
         player.takeDamage(damage);
     }
@@ -63,15 +71,23 @@ public class Enemy extends GameObject {
         return hp > 0;
     }
 
-    public String getName() {
+    public String getName(){
         return name;
     }
 
-    public int getHp() {
+    public void setName(String name){
+        this.name = name;
+    }
+
+    public int getHp(){
         return hp;
     }
 
-    public int getMaxHp() {
+    public void setHp(int hp){
+        this.hp = Math.max(0, hp);
+    }
+
+    public int getMaxHP(){
         return maxHp;
     }
 
@@ -79,7 +95,7 @@ public class Enemy extends GameObject {
         return scoreValue;
     }
 
-    public void setHp(int hp) {
-        this.hp = Math.max(hp, 0);
+    public void setScoreValue (long scoreValue){
+        this.scoreValue = scoreValue;
     }
 }

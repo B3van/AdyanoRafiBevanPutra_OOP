@@ -1,6 +1,8 @@
-package com.Bevan.frontend;
+package com.Bevan.frontend.objects.enemies;
 
 import com.badlogic.gdx.graphics.Color;
+import com.Bevan.frontend.objects.GameObject;
+import com.Bevan.frontend.objects.Player;
 
 public class Enemy extends GameObject {
 
@@ -37,8 +39,11 @@ public class Enemy extends GameObject {
 
         setHp(getHp() - damage);
 
-        System.out.println(getName() + " took " + damage
-            + " damage! HP: " + getHp() + "/" + getMaxHp());
+        System.out.println(
+            getName() + " took " + damage
+                + " damage! HP: " + getHp()
+                + "/" + getMaxHp()
+        );
 
         if (getHp() == 0) {
             System.out.println(getName() + " was defeated!");
@@ -49,7 +54,11 @@ public class Enemy extends GameObject {
     }
 
     public void attack(Player player, int damage) {
-        System.out.println(getName() + " unleashes bullet barrage on " + player.getName() + "!");
+        System.out.println(
+            getName() + " unleashes bullet barrage on "
+                + player.getName() + "!"
+        );
+
         player.takeDamage(damage);
     }
 

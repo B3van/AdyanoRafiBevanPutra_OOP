@@ -4,10 +4,11 @@ import com.badlogic.gdx.graphics.Color;
 
 public class Player extends GameObject {
 
-    public String name;
-    public int hp;
-    public int power;
-    public int spellCards;
+    private String name;
+    private int hp;
+    private int power;
+    private int spellCards;
+    private long score;
 
     public Player(String name, int hp, int power, int spellCards) {
         super(280, 40, 32, 32, 0, Color.RED);
@@ -19,7 +20,9 @@ public class Player extends GameObject {
         this.score = 0;
     }
 
-    public Player(float x, float y, String name, int hp, int power, int spellCards) {
+    public Player(float x, float y, String name,
+                  int hp, int power, int spellCards) {
+
         super(x, y, 32, 32, 0, Color.RED);
 
         this.name = name;
@@ -32,47 +35,101 @@ public class Player extends GameObject {
     public void shoot(Enemy target) {
         int damage = 10 + power;
 
-        System.out.println(name + " shoots " + target.getName()
-                + " dealing " + damage + " DMG!");
+        System.out.println(
+            getName() + " shoots "
+            + target.name + " dealing "
+            + damage + " DMG!");
 
-        target.takeDamage(damage);
+        boolean defeated = target.takeDamage(damage);
+
+        if (defeated) {
+            addScore(target.getScoreValue);
+        }
+    }
+
+    public void takeDamage(int damage) {
+
+        setHp(getHp() - damage);
+
+        if (getHp() > 0) {
+            System.out.println(
+                getName() + " took " + damage
+                          +  " damage! Remaining HP: " + hp);
+        } else {
+            System.out.println(
+                getName() + " was defeated! "
+
+            );
+        }
     }
 
     public void addScore(long points) {
         if (points > 0) {
-            score += points;
+
+            this.score += points;
+
+            System.out.println(
+                getName()
+                        + " gained "
+                        + points
+                        + " pts! Total Score: "
+                        + this.score
+            );
         }
     }
 
-    public String getName() {
+    public void collectItem (Item item) {
+
+        system.out.println(
+            getName()
+                    + " collected "
+                    + item.getItemType()
+                    + "!"
+        );
+
+        if (item.getScoreValue() > 0) {
+            addScore(item.getScoreValue());
+
+        }
+    }
+
+    public boolean isAlive() {
+        return hp > 0;
+    }
+
+    public string getName() {
         return name;
     }
 
-    public int getHp() {
+    public void setName(String name){
+        this.name = name;
+    }
+
+    public int getHp(){
         return hp;
     }
 
-    public int getPower() {
+    public void setHp(int hp){
+        this.hp = Math.max(0, hp);
+    }
+
+    public int getPower(){
         return power;
     }
 
-    public int getSpellCards() {
+    public void setPower(int power){
+        this.power = power;
+    }
+
+    public int getSpellCards(){
         return spellCards;
     }
 
-    public long getScore() {
+    public void setSpellCards(int spellCards){
+        this.spellCards = spellCards;
+    }
+
+    public long getScore(){
         return score;
-    }
-
-    public void setHp(int hp) {
-        this.hp = Math.max(hp, 0);
-    }
-
-    public void takeDamage(int damage) {
-        hp -= damage;
-
-        if (hp < 0) {
-            hp = 0;
-        }
     }
 }

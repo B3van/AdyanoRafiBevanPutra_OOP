@@ -14,6 +14,7 @@ public abstract class GameObject {
 
     public GameObject(float x, float y, float width, float height,
                       float speed, Color color) {
+
         this.x = x;
         this.y = y;
         this.width = width;
@@ -23,12 +24,58 @@ public abstract class GameObject {
     }
 
     public void update(float delta) {
-        // Intentionally empty because not every GameObject needs automatic movement.
-        // Subclasses such as Item can override this method when needed.
     }
 
     public void render(ShapeRenderer shapeRenderer) {
         shapeRenderer.setColor(color);
         shapeRenderer.rect(x, y, width, height);
+    }
+     public float getX() {
+        return x;
+
+     }
+
+     public void setX(float x){
+        this.x = x;
+     }
+
+     public float getY(){
+        return y;
+     }
+
+     pubic void setY(float y) {
+        this.y = y;
+    }
+
+    public float getWidth(){
+        return width;
+    }
+
+    public void setWidth(float width) {
+        if (width > 0) this.width = width;
+    }
+
+    public float getHeight(){
+        return height;
+    }
+
+    public void setHeight(float height){
+        if (height > 0) this.height = height;
+    }
+
+    public float getSpeed(){
+        return speed;
+    }
+
+    public void setSpeed(float speed){
+        if (speed >= 0) this.speed = speed;
+    }
+
+    public color getColor(){
+        return color;
+    }
+
+    public void setColor(color color) {
+        this.color = color;
     }
 }
