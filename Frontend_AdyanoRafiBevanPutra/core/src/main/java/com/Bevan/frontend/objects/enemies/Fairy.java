@@ -2,7 +2,6 @@ package com.Bevan.frontend.objects.enemies;
 
 import com.Bevan.frontend.objects.Collidable;
 import com.Bevan.frontend.objects.Player;
-
 import com.badlogic.gdx.graphics.Color;
 
 public class Fairy extends Enemy {

@@ -1,69 +1,82 @@
 package com.Bevan.frontend.objects.enemies;
 
-import com.badlogic.gdx.graphics.Color;
+import com.Bevan.frontend.objects.Collidable;
 import com.Bevan.frontend.objects.GameObject;
 import com.Bevan.frontend.objects.Player;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Rectangle;
 
-public class Enemy extends GameObject {
-
+public class Enemy extends GameObject implements Collidable {
     private String name;
     private int hp;
     private int maxHp;
-    protected long scoreValue;
+    private long scoreValue;
 
     public Enemy(String name, int hp) {
-        super(200, 380, 24, 24, 0, Color.PINK);
-
-        this.name = name;
-        this.hp = hp;
-        this.maxHp = hp;
-        this.scoreValue = 100L;
+        this(0, 0, 24, 24, Color.PINK, name, hp, 100L);
     }
 
-    public Enemy(float x, float y, float width, float height,
-                 Color color, String name, int hp, long scoreValue) {
-
-        super(x, y, width, height, 0, color);
-
+    public Enemy(float x, float y, int width, int height, Color color,
+                 String name, int hp, long scoreValue) {
+        super(x, y, width, height, 0f, color);
         this.name = name;
-        this.hp = hp;
-        this.maxHp = hp;
+        this.hp = Math.max(0, hp);
+        this.maxHp = this.hp;
         this.scoreValue = scoreValue;
     }
 
-    public boolean takeDamage(int damage) {
+    @Override
+    public void update(float delta) {
+        // Enemy movement can be added later.
+    }
 
-        if (getHp() <= 0) {
-            return false;
+    public boolean takeDamage(int damage) {
+        boolean wasAlive = isAlive();
+        this.hp -= damage;
+
+        if (this.hp < 0) {
+            this.hp = 0;
         }
 
-        setHp(getHp() - damage);
+        System.out.println(name + " took " + damage
+            + " damage! HP: " + this.hp + "/" + this.maxHp);
 
-        System.out.println(
-            getName() + " took " + damage
-                + " damage! HP: " + getHp()
-                + "/" + getMaxHp()
-        );
-
-        if (getHp() == 0) {
-            System.out.println(getName() + " was defeated!");
+        if (wasAlive && this.hp == 0) {
+            System.out.println(name + " was defeated!");
+            destroy();
             return true;
         }
 
         return false;
     }
 
-    public void attack(Player player, int damage) {
-        System.out.println(
-            getName() + " unleashes bullet barrage on "
-                + player.getName() + "!"
-        );
-
-        player.takeDamage(damage);
+    public boolean isAlive() {
+        return hp > 0;
     }
 
-    public boolean isAlive() {
-        return getHp() > 0;
+    public void attack(Player player, int damage) {
+        if (isAlive() && player != null) {
+            System.out.println(name + " attacks " + player.getName()
+                + " for " + damage + " damage!");
+            player.takeDamage(damage);
+        }
+    }
+
+    @Override
+    public Rectangle getCoreHitbox() {
+        return null;
+    }
+
+    @Override
+    public Rectangle getGrazeHitbox() {
+        return null;
+    }
+
+    @Override
+    public void onCollision(Collidable other) {
+        if (other instanceof Player) {
+            System.out.println("Player touches enemy!");
+        }
     }
 
     public String getName() {

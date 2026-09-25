@@ -5,6 +5,8 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.Input;
+import java.util.Iterator;
 
 
 import com.Bevan.frontend.objects.GameObject;
@@ -81,15 +83,54 @@ public class Main extends ApplicationAdapter {
         entities.add(powerItem);
     }
 
+public <T extends GameObject> void updateAndClean(
+    List <T> list,
+    float delta,
+    float screenWidth,
+    float screenHeight)
+
+    {
+
+        Iterator<T> iterator = list.iterator();
+
+        while (iterator.hasNext()) {
+            T entity = iterator.next();
+
+        entity.update(delta);
+
+        if (entity.isOffScreen(screenWidth, screenHeight)
+            || entity.isDestroyed()) {
+
+            System.out.println(
+                "Removed via Generic Iterator: "
+                    + entity.getClass().getSimpleName()
+            );
+
+            iterator.remove();
+
+            }
+
+         }
+
+    }
     @Override
     public void render() {
 
         float delta = Gdx.graphics.getDeltaTime();
 
-        // Polymorphic update
-        for (GameObject obj : entities) {
-            obj.update(delta);
+        if (Gdx.input.isKeyJustPressed(Input.Keyz.Z)) {
+            entities.add(player.shootBullet());
         }
+
+        updateAndClean(
+            entities,
+            delta,
+            Gdx.graphics.getWidth(),
+            Gdx.graphics.getHeight()
+        );
+
+
+
 
         // AABB collision detection
         for (int i = 0; i < entities.size(); i++) {
@@ -97,9 +138,12 @@ public class Main extends ApplicationAdapter {
                 GameObject a = entities.get(i);
                 GameObject b = entities.get(j);
 
+                if (a.isDestroyed() && !b.isDestroyed()){
                 if (a.getCoreHitbox(). overlaps(b.getCoreHitbox())) {
                     a.onCollision(b);
                     b.onCollision(a);
+
+                         }
 
                     }
                 }
@@ -113,7 +157,9 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (GameObject obj : entities) {
-            obj.render(shapeRenderer);
+            if (!entity.isDestroyed()){
+                entity.render(shapeRenderer);
+            }
         }
 
         shapeRenderer.end();
