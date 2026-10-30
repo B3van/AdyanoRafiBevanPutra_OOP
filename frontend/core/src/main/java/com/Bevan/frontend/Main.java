@@ -1,12 +1,13 @@
 package com.Bevan.frontend;
 
-import com.Bevan.frontend.objects.enemies.Fairy;
-import com.Bevan.frontend.objects.enemies.Boss;
 import com.Bevan.frontend.objects.GameObject;
 import com.Bevan.frontend.objects.Player;
+import com.Bevan.frontend.objects.enemies.Boss;
+import com.Bevan.frontend.objects.enemies.Fairy;
 import com.Bevan.frontend.objects.items.Item;
 import com.Bevan.frontend.objects.items.ItemType;
 import com.Bevan.frontend.systems.AssetManager;
+import com.Bevan.frontend.systems.BulletManager;
 import com.Bevan.frontend.systems.EntityFactory;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -24,49 +25,60 @@ public class Main extends ApplicationAdapter {
 
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
+
     private Player player;
     private List<Fairy> fairy;
     private Boss boss;
     private List<GameObject> entities;
 
+    private BulletManager bulletManager;
+
     @Override
     public void create() {
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
+
         entities = new ArrayList<>();
         fairy = new ArrayList<>();
+        bulletManager = new BulletManager();
 
         AssetManager.getInstance().init();
 
         player = EntityFactory.createPlayer(
             280, 40, "Reimu Hakurei", 100, 15, 3
         );
-
         entities.add(player);
 
-        fairy.add(EntityFactory.createFairy(150, 380, "Red Fairy", 20));
-        fairy.add(EntityFactory.createFairy(250, 380, "Blue Fairy",20, "Fairy_idle_blue"));
+        fairy.add(EntityFactory.createFairy(
+            150, 380, "Red Fairy", 20
+        ));
+
+        fairy.add(EntityFactory.createFairy(
+            250, 380, "Blue Fairy", 20, "fairy_idle_blue"
+        ));
+
         entities.addAll(fairy);
-        boss = EntityFactory.createBoss(380, 400, "Rumia", 150);
+
+        boss = EntityFactory.createBoss(
+            380, 400, "Rumia", 150
+        );
         entities.add(boss);
 
         Item powerItem = EntityFactory.createItem(
             200, 450, ItemType.POWER
         );
         powerItem.setSpeed(80f);
+        powerItem.setWidth(16);
+        powerItem.setHeight(16);
         entities.add(powerItem);
 
         Item pointItem = EntityFactory.createItem(
             320, 480, ItemType.POINT
         );
         pointItem.setSpeed(120f);
-        pointItem.setWidth(12);
-        pointItem.setHeight(12);
+        pointItem.setWidth(16);
+        pointItem.setHeight(16);
         entities.add(pointItem);
-
-        entities.add(EntityFactory.createEnemyBullet(
-            100, 300, 10
-        ));
     }
 
     public <T extends GameObject> void updateAndClean(
@@ -109,17 +121,20 @@ public class Main extends ApplicationAdapter {
     @Override
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
+        float screenWidth = Gdx.graphics.getWidth();
+        float screenHeight = Gdx.graphics.getHeight();
 
-        if (player.isAlive() && !player.isDestroyed()
+        if (player.isAlive()
+            && !player.isDestroyed()
             && Gdx.input.isKeyJustPressed(Input.Keys.Z)) {
-            entities.add(player.shootBullet());
+            player.shootBullet(bulletManager);
         }
 
         updateAndClean(
             entities,
             delta,
-            Gdx.graphics.getWidth(),
-            Gdx.graphics.getHeight()
+            screenWidth,
+            screenHeight
         );
 
         for (int i = 0; i < entities.size(); i++) {
@@ -127,7 +142,8 @@ public class Main extends ApplicationAdapter {
                 GameObject a = entities.get(i);
                 GameObject b = entities.get(j);
 
-                if (!a.isDestroyed() && !b.isDestroyed()
+                if (!a.isDestroyed()
+                    && !b.isDestroyed()
                     && getHitbox(a).overlaps(getHitbox(b))) {
                     a.onCollision(b);
                     b.onCollision(a);
@@ -145,9 +161,10 @@ public class Main extends ApplicationAdapter {
             }
         }
 
+        bulletManager.render(batch);
+
         batch.end();
 
-        // Draw objects that do not yet have a sprite.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         for (GameObject entity : entities) {

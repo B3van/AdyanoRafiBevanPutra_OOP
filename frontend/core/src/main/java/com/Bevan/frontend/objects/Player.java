@@ -1,10 +1,15 @@
 package com.Bevan.frontend.objects;
 
-import com.Bevan.frontend.objects.bullets.Bullet;
-import com.Bevan.frontend.objects.BulletType;
 import com.Bevan.frontend.objects.enemies.Enemy;
 import com.Bevan.frontend.objects.items.Item;
+import com.Bevan.frontend.objects.patterns.ShootingPattern;
+import com.Bevan.frontend.systems.AssetManager;
+import com.Bevan.frontend.systems.BulletManager;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 
 public class Player extends GameObject implements Collidable {
@@ -14,6 +19,9 @@ public class Player extends GameObject implements Collidable {
     private int power;
     private int spellCards;
     private long score;
+    private int currentDir = 0;
+
+    private ShootingPattern shootingPattern;
 
     public Player(String name, int hp, int power, int spellCards) {
         this(280, 40, name, hp, power, spellCards);
@@ -21,7 +29,8 @@ public class Player extends GameObject implements Collidable {
 
     public Player(float x, float y, String name, int hp,
                   int power, int spellCards) {
-        super(x, y, 32, 48, 0f, Color.RED);
+        super(x, y, 32, 48, 200f, Color.RED);
+
         this.name = name;
         this.hp = Math.max(0, hp);
         this.power = power;
@@ -32,30 +41,97 @@ public class Player extends GameObject implements Collidable {
     @Override
     public void update(float delta) {
         super.update(delta);
+
+        float dx = 0f;
+        float distance = getSpeed() * delta;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)
+            || Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            setY(getY() + distance);
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.S)
+            || Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            setY(getY() - distance);
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.A)
+            || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            setX(getX() - distance);
+            dx -= distance;
+        }
+
+        if (Gdx.input.isKeyPressed(Input.Keys.D)
+            || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            setX(getX() + distance);
+            dx += distance;
+        }
+
+        updateAnimationState(dx);
     }
 
-    public Bullet shootBullet() {
-        int damage = 10 + power;
+    private void updateAnimationState(float dx) {
+        int nextDir;
+        String animationKey;
 
-        System.out.println(
-            name + " shoots bullet dealing " + damage + " DMG!");
+        if (dx < 0f) {
+            nextDir = -1;
+            animationKey = "player_left";
+        } else if (dx > 0f) {
+            nextDir = 1;
+            animationKey = "player_right";
+        } else {
+            nextDir = 0;
+            animationKey = "player_idle";
+        }
 
-        return new Bullet(
-            getX() + getWidth() / 2f - 4,
-            getY() + getHeight(),
-            BulletType.AMULET,
-            damage
-        );
+        if (nextDir != currentDir) {
+            Animation<TextureRegion> animation =
+                AssetManager.getInstance().getAnimation(animationKey);
+
+            if (animation != null) {
+                setAnimation(animation);
+                currentDir = nextDir;
+            }
+        }
     }
 
-    // Keep the older shooting method from Modules 1–3.
+    public void shootBullet(BulletManager bulletManager) {
+        if (bulletManager == null) {
+            return;
+        }
+
+        float muzzleX = getX() + getWidth() / 2f - 8f;
+        float muzzleY = getY() + getHeight();
+
+        if (shootingPattern != null) {
+            shootingPattern.execute(
+                muzzleX,
+                muzzleY,
+                bulletManager,
+                true
+            );
+        } else {
+            int damage = 10 + power;
+
+            bulletManager.spawnPlayerBullet(
+                muzzleX,
+                muzzleY,
+                0f,
+                400f,
+                damage
+            );
+        }
+    }
+
     public void shoot(Enemy target) {
         if (target != null && target.isAlive()) {
             int damage = 10 + power;
 
             System.out.println(
                 name + " shoots " + target.getName()
-                    + " for " + damage + " damage!");
+                    + " for " + damage + " damage!"
+            );
 
             if (target.takeDamage(damage)) {
                 addScore(target.getScoreValue());
@@ -67,7 +143,8 @@ public class Player extends GameObject implements Collidable {
         setHp(hp - damage);
 
         System.out.println(
-            name + " took " + damage + " damage! HP: " + hp);
+            name + " took " + damage + " damage! HP: " + hp
+        );
     }
 
     public boolean isAlive() {
@@ -88,17 +165,35 @@ public class Player extends GameObject implements Collidable {
 
     @Override
     public Rectangle getCoreHitbox() {
-        return null;
+        return new Rectangle(
+            getX() + getWidth() / 2f - 4f,
+            getY() + getHeight() / 2f - 4f,
+            8f,
+            8f
+        );
     }
 
     @Override
     public Rectangle getGrazeHitbox() {
-        return null;
+        return new Rectangle(
+            getX(),
+            getY(),
+            getWidth(),
+            getHeight()
+        );
     }
 
     @Override
     public void onCollision(Collidable other) {
-        // Collision behavior can be added later.
+        // Damage and item collection are handled by other entities.
+    }
+
+    public ShootingPattern getShootingPattern() {
+        return shootingPattern;
+    }
+
+    public void setShootingPattern(ShootingPattern shootingPattern) {
+        this.shootingPattern = shootingPattern;
     }
 
     public String getName() {

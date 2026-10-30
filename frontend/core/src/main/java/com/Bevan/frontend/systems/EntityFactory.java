@@ -111,4 +111,21 @@ public class EntityFactory {
         );
         return bullet;
     }
+    public static Bullet createPlayerBullet(
+        float x, float y, int damage, String spriteKey) {
+
+        Bullet bullet = new Bullet(x, y, BulletType.AMULET, damage);
+        bullet.setWidth(16);
+        bullet.setHeight(16);
+        bullet.setSprite(
+            AssetManager.getInstance().getTextureRegion(spriteKey)
+        );
+        return bullet;
+    }
+
+    public static Bullet createPlayerBullet(
+        float x, float y, int damage) {
+
+        return createPlayerBullet(x, y, damage, "bullet_amulet");
+    }
 }
