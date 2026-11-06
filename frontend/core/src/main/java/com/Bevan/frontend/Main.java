@@ -29,6 +29,8 @@ public class Main extends ApplicationAdapter {
     private Player player;
     private List<Fairy> fairy;
     private Boss boss;
+    private Item powerItem;
+    private Item pointItem;
     private List<GameObject> entities;
 
     private BulletManager bulletManager;
@@ -45,9 +47,8 @@ public class Main extends ApplicationAdapter {
         AssetManager.getInstance().init();
 
         player = EntityFactory.createPlayer(
-            280, 40, "Reimu Hakurei", 100, 15, 3
+            200, 50, "Reimu Hakurei", 100, 15, 3
         );
-        entities.add(player);
 
         fairy.add(EntityFactory.createFairy(
             150, 380, "Red Fairy", 20
@@ -57,27 +58,28 @@ public class Main extends ApplicationAdapter {
             250, 380, "Blue Fairy", 20, "fairy_idle_blue"
         ));
 
-        entities.addAll(fairy);
-
         boss = EntityFactory.createBoss(
-            380, 400, "Rumia", 150
+            250, 400, "Rumia", 150
         );
-        entities.add(boss);
 
-        Item powerItem = EntityFactory.createItem(
-            200, 450, ItemType.POWER
+        powerItem = EntityFactory.createItem(
+            180, 450, ItemType.POWER
         );
         powerItem.setSpeed(80f);
         powerItem.setWidth(16);
         powerItem.setHeight(16);
-        entities.add(powerItem);
 
-        Item pointItem = EntityFactory.createItem(
-            320, 480, ItemType.POINT
+        pointItem = EntityFactory.createItem(
+            220, 480, ItemType.POINT
         );
         pointItem.setSpeed(120f);
         pointItem.setWidth(16);
         pointItem.setHeight(16);
+
+        entities.add(player);
+        entities.addAll(fairy);
+        entities.add(boss);
+        entities.add(powerItem);
         entities.add(pointItem);
     }
 
@@ -116,6 +118,50 @@ public class Main extends ApplicationAdapter {
             entity.getWidth(),
             entity.getHeight()
         );
+    }
+
+    private void restartGame() {
+        System.out.println("[Main] Restarting game...");
+
+        entities.clear();
+        bulletManager.clearEnemyBullets();
+        bulletManager.clearPlayerBullets();
+
+        entities.add(player);
+        player.resetGame();
+
+        fairy.clear();
+
+        fairy.add(EntityFactory.createFairy(
+            150, 380, "Red Fairy", 20
+        ));
+
+        fairy.add(EntityFactory.createFairy(
+            250, 380, "Blue Fairy", 20, "fairy_idle_blue"
+        ));
+
+        boss = EntityFactory.createBoss(
+            250, 400, "Rumia", 150
+        );
+
+        powerItem = EntityFactory.createItem(
+            180, 450, ItemType.POWER
+        );
+        powerItem.setSpeed(80f);
+        powerItem.setWidth(16);
+        powerItem.setHeight(16);
+
+        pointItem = EntityFactory.createItem(
+            220, 480, ItemType.POINT
+        );
+        pointItem.setSpeed(120f);
+        pointItem.setWidth(16);
+        pointItem.setHeight(16);
+
+        entities.addAll(fairy);
+        entities.add(boss);
+        entities.add(powerItem);
+        entities.add(pointItem);
     }
 
     @Override
