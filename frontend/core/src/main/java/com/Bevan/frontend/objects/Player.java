@@ -2,20 +2,27 @@ package com.Bevan.frontend.objects;
 
 import com.Bevan.frontend.objects.enemies.Enemy;
 import com.Bevan.frontend.objects.items.Item;
+import com.Bevan.frontend.objects.items.ItemType;
 import com.Bevan.frontend.objects.patterns.ShootingPattern;
+import com.Bevan.frontend.observers.GameObserver;
 import com.Bevan.frontend.systems.AssetManager;
 import com.Bevan.frontend.systems.BulletManager;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Player extends GameObject implements Collidable {
+    private final List<GameObserver> observers = new ArrayList<>();
 
     private String name;
     private int hp;
+    private int lives = 3;
     private int power;
     private int spellCards;
     private long score;
@@ -23,12 +30,24 @@ public class Player extends GameObject implements Collidable {
 
     private ShootingPattern shootingPattern;
 
+    private int grazeCount = 0;
+    private boolean focused = false;
+    private float shootTimer = 0.1f;
+    private float shootCooldown = 0.1f;
+    private float invulnerableTimer = 0f;
+
     public Player(String name, int hp, int power, int spellCards) {
-        this(280, 40, name, hp, power, spellCards);
+        this(200, 50, name, hp, power, spellCards);
     }
 
-    public Player(float x, float y, String name, int hp,
-                  int power, int spellCards) {
+    public Player(
+        float x,
+        float y,
+        String name,
+        int hp,
+        int power,
+        int spellCards
+    ) {
         super(x, y, 32, 48, 200f, Color.RED);
 
         this.name = name;
@@ -42,35 +61,35 @@ public class Player extends GameObject implements Collidable {
     public void update(float delta) {
         super.update(delta);
 
-        float dx = 0f;
-        float distance = getSpeed() * delta;
+        shootTimer += delta;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W)
-            || Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            setY(getY() + distance);
+        if (invulnerableTimer > 0f) {
+            invulnerableTimer -= delta;
+
+            if (invulnerableTimer < 0f) {
+                invulnerableTimer = 0f;
+            }
         }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.S)
-            || Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            setY(getY() - distance);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.A)
-            || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            setX(getX() - distance);
-            dx -= distance;
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.D)
-            || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            setX(getX() + distance);
-            dx += distance;
-        }
-
-        updateAnimationState(dx);
     }
 
-    private void updateAnimationState(float dx) {
+    public void move(float dx, float dy) {
+        setX(getX() + dx * getSpeed());
+        setY(getY() + dy * getSpeed());
+
+        clampToPlayfield();
+    }
+
+    private void clampToPlayfield() {
+        float minX = 32f;
+        float maxX = 416f - getWidth();
+        float minY = 16f;
+        float maxY = 560f - getHeight();
+
+        setX(Math.max(minX, Math.min(getX(), maxX)));
+        setY(Math.max(minY, Math.min(getY(), maxY)));
+    }
+
+    public void updateAnimationState(float dx) {
         int nextDir;
         String animationKey;
 
@@ -101,26 +120,28 @@ public class Player extends GameObject implements Collidable {
             return;
         }
 
-        float muzzleX = getX() + getWidth() / 2f - 8f;
-        float muzzleY = getY() + getHeight();
+        if (shootTimer >= shootCooldown) {
+            float muzzleX = getX() + getWidth() / 2f - 8f;
+            float muzzleY = getY() + getHeight();
 
-        if (shootingPattern != null) {
-            shootingPattern.execute(
-                muzzleX,
-                muzzleY,
-                bulletManager,
-                true
-            );
-        } else {
-            int damage = 10 + power;
+            if (shootingPattern != null) {
+                shootingPattern.execute(
+                    muzzleX,
+                    muzzleY,
+                    bulletManager,
+                    true
+                );
+            } else {
+                bulletManager.spawnPlayerBullet(
+                    muzzleX,
+                    muzzleY,
+                    0f,
+                    400f,
+                    10 + power
+                );
+            }
 
-            bulletManager.spawnPlayerBullet(
-                muzzleX,
-                muzzleY,
-                0f,
-                400f,
-                damage
-            );
+            shootTimer = 0f;
         }
     }
 
@@ -139,28 +160,275 @@ public class Player extends GameObject implements Collidable {
         }
     }
 
-    public void takeDamage(int damage) {
-        setHp(hp - damage);
+    public void useBomb(
+        BulletManager bulletManager,
+        List<GameObject> entities
+    ) {
+        if (spellCards > 0) {
+            spellCards--;
+            notifySpellCardsChanged();
+            invulnerableTimer = 5.0f;
 
-        System.out.println(
-            name + " took " + damage + " damage! HP: " + hp
-        );
+            if (bulletManager != null) {
+                bulletManager.clearEnemyBullets(entities);
+            }
+
+            System.out.println(
+                name + " unleashes SPELL CARD (Fantasy Seal)! "
+                    + "All enemy bullets cleared!"
+            );
+        } else {
+            System.out.println("No Spell Cards (Bombs) remaining!");
+        }
     }
 
-    public boolean isAlive() {
-        return hp > 0;
+    public void useBomb(BulletManager bulletManager) {
+        useBomb(bulletManager, null);
+    }
+
+    public void addGraze() {
+        grazeCount++;
+        addScore(50);
+        notifyGrazeChanged();
+    }
+
+    @Override
+    public void render(SpriteBatch batch) {
+        if (batch == null || !active || isDestroyed()) {
+            return;
+        }
+
+        if (invulnerableTimer > 0f) {
+            boolean visible =
+                ((int) (invulnerableTimer * 16)) % 2 == 0;
+
+            if (!visible) {
+                return;
+            }
+        }
+
+        float previousColor = batch.getPackedColor();
+
+        if (focused) {
+            batch.setColor(1f, 1f, 1f, 0.5f);
+        }
+
+        super.render(batch);
+
+        batch.setPackedColor(previousColor);
+    }
+
+    public void renderFocusIndicator(ShapeRenderer shapeRenderer) {
+        if (focused && shapeRenderer != null
+            && active && !isDestroyed()) {
+
+            Rectangle core = getCoreHitbox();
+
+            float centerX = core.x + core.width / 2f;
+            float centerY = core.y + core.height / 2f;
+
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.circle(centerX, centerY, 4f);
+
+            shapeRenderer.setColor(Color.WHITE);
+            shapeRenderer.circle(centerX, centerY, 2f);
+
+            shapeRenderer.end();
+        }
+    }
+
+    public void takeDamage(int damage) {
+        takeDamage(damage, null, null);
+    }
+
+    public void takeDamage(
+        int damage,
+        BulletManager bulletManager,
+        List<GameObject> entities
+    ) {
+        if (isInvulnerable() || isDestroyed()) {
+            if (isInvulnerable()) {
+                System.out.println(
+                    name + " is INVULNERABLE! (0 damage taken)"
+                );
+            }
+
+            return;
+        }
+
+        hp = Math.max(0, hp - damage);
+        notifyHpChanged();
+
+        System.out.println(
+            name + " took " + damage
+                + " damage! Remaining HP: " + hp
+        );
+
+        if (hp == 0) {
+            System.out.println(
+                name + " was defeated (Pichuun~)!"
+            );
+
+            loseLife(bulletManager, entities);
+        }
+    }
+
+    public void loseLife(
+        BulletManager bulletManager,
+        List<GameObject> entities
+    ) {
+        lives--;
+        notifyLivesChanged();
+        =
+        if (bulletManager != null) {
+            bulletManager.clearEnemyBullets();
+        }
+
+        if (lives > 0) {
+            System.out.println(
+                "[Player] " + name
+                    + " lost a life! Remaining Lives: " + lives
+                    + ". Respawning at (200, 50)..."
+            );
+
+            respawn();
+        } else {
+            System.out.println(
+                "[Player] GAME OVER! "
+                    + name + " has run out of lives!"
+            );
+
+            destroy();
+        }
+    }
+
+    public void respawn() {
+        active = true;
+
+        setX(200);
+        setY(50);
+
+        hp = 100;
+        invulnerableTimer = 3.0f;
+        power = Math.max(10, power - 16);
+        spellCards = 3;
+        notifyHpChanged();
+        notifyPowerChanged();
+        notifySpellCardsChanged();
+
+        focused = false;
+        shootTimer = shootCooldown;
+        updateAnimationState(0f);
+    }
+
+    public void resetGame() {
+        lives = 3;
+        hp = 100;
+        power = 15;
+        spellCards = 3;
+        score = 0;
+        grazeCount = 0;
+
+        notifyLivesChanged();
+        notifyHpChanged();
+        notifyPowerChanged();
+        notifySpellCardsChanged();
+        notifyScoreChanged();
+        notifyGrazeChanged();
+
+        active = true;
+
+        setX(200);
+        setY(50);
+
+        invulnerableTimer = 3.0f;
+        focused = false;
+        shootTimer = shootCooldown;
+        updateAnimationState(0f);
     }
 
     public void collectItem(Item item) {
-        if (item != null && item.getScoreValue() > 0) {
-            addScore(item.getScoreValue());
+        if (item == null || item.isDestroyed()) {
+            return;
         }
+
+        ItemType type = item.getItemTypeEnum();
+
+        if (type != null) {
+            switch (type) {
+                case POWER -> {
+                    power += type.getPowerBonus();
+                    notifyPowerChanged();
+                    addScore(item.getScoreValue());
+
+                    System.out.println(
+                        name + " collected POWER item! "
+                            + "Power increased to " + power
+                    );
+                }
+
+                case POINT -> {
+                    addScore(item.getScoreValue());
+
+                    System.out.println(
+                        name + " collected POINT item!"
+                    );
+                }
+
+                case BOMB -> {
+                    spellCards++;
+                    notifySpellCardsChanged();
+                    addScore(item.getScoreValue());
+
+                    System.out.println(
+                        name + " collected BOMB item! "
+                            + "SpellCards: " + spellCards
+                    );
+                }
+
+                case LIFE -> {
+                    lives++;
+                    hp = 100;
+                    notifyLivesChanged();
+                    notifyHpChanged();
+                    addScore(item.getScoreValue());
+
+                    System.out.println(
+                        name + " collected LIFE item! "
+                            + "Remaining Lives: " + lives
+                    );
+                }
+            }
+        } else {
+            addScore(item.getScoreValue());
+
+            System.out.println(
+                name + " collected " + item.getItemType() + "!"
+            );
+        }
+
+        item.destroy();
     }
 
     public void addScore(long points) {
         if (points > 0) {
             score += points;
+            notifyScoreChanged();
         }
+    }
+
+    public boolean isAlive() {
+        return hp > 0 && lives > 0 && !isDestroyed();
+    }
+
+    public boolean isGameOver() {
+        return lives <= 0;
+    }
+
+    public boolean isInvulnerable() {
+        return invulnerableTimer > 0f;
     }
 
     @Override
@@ -210,6 +478,8 @@ public class Player extends GameObject implements Collidable {
 
     public void setHp(int hp) {
         this.hp = Math.max(0, hp);
+        notifyHpChanged();
+
     }
 
     public int getPower() {
@@ -218,6 +488,7 @@ public class Player extends GameObject implements Collidable {
 
     public void setPower(int power) {
         this.power = power;
+        notifyPowerChanged();
     }
 
     public int getSpellCards() {
@@ -226,9 +497,52 @@ public class Player extends GameObject implements Collidable {
 
     public void setSpellCards(int spellCards) {
         this.spellCards = spellCards;
+        notifySpellCardsChanged();
     }
 
     public long getScore() {
         return score;
     }
+
+    public int getLives() {
+        return lives;
+    }
+
+    public void setLives(int lives) {
+        this.lives = lives;
+        notifyLivesChanged();
+    }
+
+    public boolean isFocused() {
+        return focused;
+    }
+
+    public void setFocused(boolean focused) {
+        this.focused = focused;
+    }
+
+    public int getGrazeCount() {
+        return grazeCount;
+    }
+
+    public float getInvulnerableTimer() {
+        return invulnerableTimer;
+    }
+    private void notifyLivesChanged() {
+        for (GameObserver o : observers) o.onLivesChanged(lives);
+    }
+    private void notifyHpChanged() {
+        for (GameObserver o : observers) o.onHpChanged(hp);
+    }
+    private void notifyPowerChanged() {
+        for (GameObserver o : observers) o.onPowerChanged(power);
+    }
+    private void notifySpellCardsChanged() {
+        for (GameObserver o : observers) o.onSpellCardsChanged(spellCards);
+    }
+    private void notifyScoreChanged() {
+        for (GameObserver o : observers) o.onScoreChanged(score);
+    }
+    private void notifyGrazeChanged() {
+        for (GameObserver o : observers) o.onGrazeChanged(grazeCount);
 }

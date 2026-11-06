@@ -1,13 +1,16 @@
 package com.Bevan.frontend.systems;
 
+import com.Bevan.frontend.objects.GameObject;
 import com.Bevan.frontend.objects.bullets.Bullet;
+import com.Bevan.frontend.objects.items.Item;
+import com.Bevan.frontend.objects.items.ItemType;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Iterator;
 
 public class BulletManager {
 
@@ -25,9 +28,13 @@ public class BulletManager {
         activeEnemyBullets = new ArrayList<>();
     }
 
-    public Bullet spawnPlayerBullet(float x, float y,
-                                    float vx, float vy,
-                                    int damage) {
+    public Bullet spawnPlayerBullet(
+        float x,
+        float y,
+        float vx,
+        float vy,
+        int damage
+    ) {
         Bullet bullet;
 
         if (!playerBulletPool.isEmpty()) {
@@ -37,75 +44,131 @@ public class BulletManager {
         }
 
         bullet.init(
-            x, y, vx, vy,
-        bullet.getBulletType(),
-        damage,
-        true
+            x,
+            y,
+            vx,
+            vy,
+            bullet.getBulletType(),
+            damage,
+            true
         );
+
         activePlayerBullets.add(bullet);
 
         return bullet;
-
     }
 
-    public Bullet spawnEnemyBullet(float x, float y,
-                                   float vx, float vy,
-                                   int damage) {
-       Bullet bullet;
+    public Bullet spawnEnemyBullet(
+        float x,
+        float y,
+        float vx,
+        float vy,
+        int damage
+    ) {
+        Bullet bullet;
 
-       if (!enemyBulletPool.isEmpty()) {
-           bullet = enemyBulletPool.poll();
-       } else {
-           bullet = EntityFactory.createEnemyBullet(x, y, damage);
-       }
+        if (!enemyBulletPool.isEmpty()) {
+            bullet = enemyBulletPool.poll();
+        } else {
+            bullet = EntityFactory.createEnemyBullet(x, y, damage);
+        }
 
-       bullet.init(
-           x, y, vx, vy,
-           bullet.getBulletType(),
-           damage,
-           false
-       );
+        bullet.init(
+            x,
+            y,
+            vx,
+            vy,
+            bullet.getBulletType(),
+            damage,
+            false
+        );
 
-       activeEnemyBullets.add(bullet);
+        activeEnemyBullets.add(bullet);
 
-       return bullet;
+        return bullet;
     }
 
-    public void update (float delta, float screenWidth,float screenHeight) {
-        Iterator<Bullet> playerIterator = activePlayerBullets.iterator();
+    public void update(
+        float delta,
+        float screenWidth,
+        float screenHeight
+    ) {
+        Iterator<Bullet> playerIterator =
+            activePlayerBullets.iterator();
 
-            while (playerIterator.hasNext()) {
-                Bullet bullet = playerIterator.next();
+        while (playerIterator.hasNext()) {
+            Bullet bullet = playerIterator.next();
 
-                if (!bullet.isDestroyed()) {
-                    bullet.update(delta);
-                }
-
-                if (bullet.isOffScreen(screenWidth, screenHeight) || bullet.isDestroyed()) {
-                    bullet.destroy();
-                    playerIterator.remove();
-                    playerBulletPool.offer(bullet);
-                }
-
+            if (!bullet.isDestroyed()) {
+                bullet.update(delta);
             }
 
-            Iterator<Bullet> enemyIterator = activeEnemyBullets.iterator();
-
-            while (enemyIterator.hasNext()) {
-                Bullet bullet = enemyIterator.next();
-
-                if (!bullet.isDestroyed()) {
-                    bullet.update(delta);
-                }
-
-                if (bullet.isOffScreen(screenWidth, screenHeight)) || bullet.isDestroyed() {
-                    bullet.destroy();
-                    enemyIterator.remove();
-                    enemyBulletPool.offer(bullet);
-
-                }
+            if (bullet.isOffScreen(screenWidth, screenHeight)
+                || bullet.isDestroyed()) {
+                bullet.destroy();
+                playerIterator.remove();
+                playerBulletPool.offer(bullet);
             }
         }
+
+        Iterator<Bullet> enemyIterator =
+            activeEnemyBullets.iterator();
+
+        while (enemyIterator.hasNext()) {
+            Bullet bullet = enemyIterator.next();
+
+            if (!bullet.isDestroyed()) {
+                bullet.update(delta);
+            }
+
+            if (bullet.isOffScreen(screenWidth, screenHeight)
+                || bullet.isDestroyed()) {
+                bullet.destroy();
+                enemyIterator.remove();
+                enemyBulletPool.offer(bullet);
+            }
+        }
+    }
+
+    public void clearEnemyBullets(List<GameObject> entities) {
+        Iterator<Bullet> iterator =
+            activeEnemyBullets.iterator();
+
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+
+            if (entities != null) {
+                Item item = EntityFactory.createItem(
+                    bullet.getX(),
+                    bullet.getY(),
+                    ItemType.POINT
+                );
+
+                entities.add(item);
+            }
+
+            bullet.destroy();
+            iterator.remove();
+            enemyBulletPool.offer(bullet);
+        }
+    }
+
+    public void clearEnemyBullets() {
+        clearEnemyBullets(null);
+    }
+
+    public void clearPlayerBullets() {
+        Iterator<Bullet> iterator =
+            activePlayerBullets.iterator();
+
+        while (iterator.hasNext()) {
+            Bullet bullet = iterator.next();
+
+            bullet.destroy();
+            iterator.remove();
+            playerBulletPool.offer(bullet);
+        }
+    }
 
     public void render(SpriteBatch batch) {
         for (Bullet bullet : activePlayerBullets) {
